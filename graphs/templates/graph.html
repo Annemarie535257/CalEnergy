@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Graphs</title>
+</head>
+<body>
+    <h1>Generated Graphs</h1>
+
+    <!-- Gunnedah Solar Farm Production Graph -->
+    <h2>Gunnedah Solar Farm - Total Energy Production</h2>
+    {{ graph_html_gunnedah_production|safe }}
+
+    <!-- Suntop Solar Farm Production Graph -->
+    <h2>Suntop Solar Farm - Total Energy Production</h2>
+    {{ graph_html_suntop_production|safe }}
+
+    <!-- Gunnedah Revenue Meter Graphs -->
+    <h1>Gunnedah Revenue Meter Graphs</h1>
+    <div>
+        <h2>First Revenue Meter Graph</h2>
+        {{ graph_html_gunnedah_revenue1|safe }}
+    </div>
+    <div>
+        <h2>Second Revenue Meter Graph</h2>
+        {{ graph_html_gunnedah_revenue2|safe }}
+    </div>
+
+    <!-- Suntop Revenue Meter Graphs -->
+    <h1>Suntop Revenue Meter Graphs</h1>
+    <div>
+        <h2>First Revenue Meter Graph</h2>
+        {{ graph_html_suntop_revenue1|safe }}
+    </div>
+    <div>
+        <h2>Second Revenue Meter Graph</h2>
+        {{ graph_html_suntop_revenue2|safe }}
+    </div>
+
+    <br>
+</body>
+</html>

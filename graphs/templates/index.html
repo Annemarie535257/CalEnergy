@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CSV Files and View Graphs</title>
+</head>
+<body>
+    <h1>Upload CSV Files to Generate Graphs</h1>
+
+    <form action="/" method="post" enctype="multipart/form-data">
+
+        <!-- Gunnedah Solar Farm -->
+        <h2>Upload Gunnedah Solar Farm Production CSV</h2>
+        <input type="file" name="file_gunnedah_production" accept=".csv">
+
+        <!-- Suntop Solar Farm -->
+        <h2>Upload Suntop Solar Farm Production CSV</h2>
+        <input type="file" name="file_suntop_production" accept=".csv">
+
+        <!-- Gunnedah Revenue Meter -->
+        <h1>Upload Revenue Meter CSV Files for Gunnedah</h1>
+        <h2>Upload First Revenue Meter CSV for Gunnedah</h2>
+        <input type="file" name="file_gunnedah_revenue1" accept=".csv">
+        <h2>Upload Second Revenue Meter CSV for Gunnedah</h2>
+        <input type="file" name="file_gunnedah_revenue2" accept=".csv">
+
+        <!-- Suntop Revenue Meter -->
+        <h1>Upload Revenue Meter CSV Files for Suntop</h1>
+        <h2>Upload First Revenue Meter CSV for Suntop</h2>
+        <input type="file" name="file_suntop_revenue1" accept=".csv">
+        <h2>Upload Second Revenue Meter CSV for Suntop</h2>
+        <input type="file" name="file_suntop_revenue2" accept=".csv">
+
+        <!-- Submit Button -->
+        <button type="submit">Generate Graphs</button>
+
+    </form>
+</body>
+</html>
