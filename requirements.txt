@@ -4,3 +4,4 @@ pandas==2.1.1
 numpy>=1.21.0
 matplotlib>=3.5.0
 plotly>=5.0.0
+gunicorn
