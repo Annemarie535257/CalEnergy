@@ -509,6 +509,8 @@ def generate_difference_graph(jan_diff, may_diff, title):
             "may": f"Error generating May graph: {e}",
         }
 
+def generate_combined_graph(jan_data, may_data, jan_diff, may_diff, title):
+    pass
 
 if __name__ == "__main__":
     app.run(debug=True)
