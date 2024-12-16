@@ -4,156 +4,177 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload CSV Files and View Graphs</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #e6f0ff;
-            color: #333;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .header .logo img {
-            height: 90px;
-        }
-
-        .dropdown select {
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #004080;
-            color: white;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-            display: none;
-        }
-
-        .container.active {
-            display: block;
-        }
-
-        section h2 {
-            background-color: #004080;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 1.2em;
-            margin-bottom: 15px;
-        }
-
-        input[type="file"] {
-            margin-bottom: 15px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 100%;
-        }
-
-        .submit-btn {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        button {
-            background-color: #004080;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        button:hover {
-            background-color: #003366;
-        }
-    </style>
-    <script>
-        function toggleForm(selectedFarm) {
-            const forms = document.querySelectorAll('.container');
-            forms.forEach(form => form.classList.remove('active'));
-
-            const selectedForm = document.getElementById(selectedFarm);
-            if (selectedForm) {
-                selectedForm.classList.add('active');
-            }
-        }
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">
-            <img src="static/images/company-logo.png" alt="Company Logo">
-        </div>
+<body class="bg-blue-50 font-sans p-7 ">
+    <div class="flex items-center justify-between px-10 mb-8">
+        <img src="/static/images/company-logo.png" alt="company Logo" class="h-28">
         <div class="dropdown">
-            <select onchange="toggleForm(this.value)">
-                <option value="gunnedah-form">Gunnedah</option>
-                <option value="suntop-form">Suntop</option>
+            <select onchange="updateForm(this)" class="p-2 text-white bg-blue-800 rounded border border-gray-300">
+                <option value="Gunnedah" selected>Gunnedah</option>
+                <option value="Suntop">Suntop</option>
             </select>
         </div>
     </div>
 
-    <div id="gunnedah-form" class="container active">
-        <form action="/graphs" method="post" enctype="multipart/form-data">
-            <section>
-                <h2>Gunnedah Solar Farm</h2>
-                <div>
-                    <label for="file_gunnedah_production">Production CSV:</label>
-                    <input type="file" id="file_production" name="file_production" accept=".csv">
-                </div>
-                <div>
-                    <label for="file_gunnedah_revenue1">First Revenue Meter CSV:</label>
-                    <input type="file" id="file_revenue1" name="file_revenue1" accept=".csv">
-                </div>
-                <div>
-                    <label for="file_gunnedah_revenue2">Second Revenue Meter CSV:</label>
-                    <input type="file" id="file_revenue2" name="file_revenue2" accept=".csv">
-                </div>
-                <div class="submit-btn">
-                    <button type="submit">Generate Graphs</button>
-                </div>
-            </section>
+    <!-- Form Section -->
+    <div id="generic-form" class="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
+        <form id="upload-form" method="POST" enctype="multipart/form-data" action="/calculate">
+
+            <h2 id="form-title" class="bg-blue-800 text-white text-lg p-2 rounded">Gunnedah Solar Farm</h2>
+            <div class="mb-4">
+                <label for="file_production" class="block font-medium mb-2">Production CSV:</label>
+                <input type="file" id="file_production" name="file_production" accept=".csv" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <div class="mb-4">
+                <label for="file_revenue1" class="block font-medium mb-2">First Revenue Meter CSV:</label>
+                <input type="file" id="file_revenue1" name="file_revenue1" accept=".csv" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <div class="mb-4">
+                <label for="file_revenue2" class="block font-medium mb-2">Second Revenue Meter CSV:</label>
+                <input type="file" id="file_revenue2" name="file_revenue2" accept=".csv" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <div id="loading-indicator" class="text-center hidden text-blue-800 mt-4">Graphs are generating...</div>
+            <div class="submit-btn flex justify-center mt-6">
+                <button id="generate-button" type="submit" class="bg-blue-800 text-white px-6 py-2 rounded hover:bg-blue-900">Generate Graphs</button>
+            </div>
         </form>
+    </div>
+ 
+    <!-- Graphs Section -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-2 max-w-7xl mx-auto">
+        <div class="border p-6 rounded-lg bg-green-100">
+            <h2 id="janp-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="jan-production" class="graph-content"></div>
+        </div>
+ 
+        <div class="border p-6 rounded-lg bg-yellow-100">
+            <h2 id="mayp-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="may-production" class="graph-content"></div>
+        </div>
+
+        <div class="border p-6 rounded-lg bg-green-100">
+            <h2 id="janr-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="jan-revenue" class="graph-content"></div>
+        </div>
+
+        <div class="border p-6 rounded-lg bg-yellow-100">
+            <h2 id="mayr-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="may-revenue" class="graph-content"></div>
+        </div>
+        <div class="border p-6 rounded-lg bg-green-100">
+            <h2 id="jand-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="jan-difference" class="graph-content"></div>
+        </div>
+
+        <div class="border p-6 rounded-lg bg-yellow-100">
+            <h2 id="mayd-title" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="may-difference" class="graph-content"></div>
+        </div>
+
+    </div>
+    
+    <div class="border p-6 rounded-lg bg-green-100">
+        <h2 id="janco-title" class="text-xl font-bold mb-4 text-center"></h2>
+        <div id="jan-combined" class="graph-content"></div>
     </div>
 
-    <div id="suntop-form" class="container">
-        <form action="/graphs" method="post" enctype="multipart/form-data">
-            <section>
-                <h2>Suntop Solar Farm</h2>
-                <div>
-                    <label for="file_suntop_production">Production CSV:</label>
-                    <input type="file" id="file_production" name="file_production" accept=".csv">
-                </div>
-                <div>
-                    <label for="file_suntop_revenue1">First Revenue Meter CSV:</label>
-                    <input type="file" id="file_revenue1" name="file_revenue1" accept=".csv">
-                </div>
-                <div>
-                    <label for="file_suntop_revenue2">Second Revenue Meter CSV:</label>
-                    <input type="file" id="file_revenue2" name="file_revenue2" accept=".csv">
-                </div>
-                <div class="submit-btn">
-                    <button type="submit">Generate Graphs</button>
-                </div>
-            </section>
-        </form>
+    <div class="border p-6 rounded-lg bg-yellow-100">
+        <h2 id="mayco-title" class="text-xl font-bold mb-4 text-center"></h2>
+        <div id="may-combined" class="graph-content"></div>
     </div>
+
+    <script>
+        function updateForm(selectElement) {
+            const formTitle = document.getElementById('form-title');
+            const selectedFarm = selectElement.value;
+    
+            // Clear the graph contents
+            document.getElementById('jan-production').innerHTML = '';
+            document.getElementById('may-production').innerHTML = '';
+            document.getElementById('jan-revenue').innerHTML = '';
+            document.getElementById('may-revenue').innerHTML = '';
+            document.getElementById('jan-difference').innerHTML = '';
+            document.getElementById('may-difference').innerHTML = '';
+            document.getElementById('jan-combined').innerHTML = '';
+            document.getElementById('may-combined').innerHTML = '';
+    
+            // Reset form inputs
+            document.getElementById('upload-form').reset();
+    
+            // Update form title
+            formTitle.textContent = `${selectedFarm} Solar Farm`;
+    
+            // Update graph titles
+            document.getElementById('janp-title').textContent = `${selectedFarm} January Production`;
+            document.getElementById('mayp-title').textContent = `${selectedFarm} May Production`;
+            document.getElementById('janr-title').textContent = `${selectedFarm} January Revenue`;
+            document.getElementById('mayr-title').textContent = `${selectedFarm} May Revenue`;
+            document.getElementById('jand-title').textContent = `${selectedFarm} January Difference`;
+            document.getElementById('mayd-title').textContent = `${selectedFarm} May Difference`;
+            document.getElementById('janco-title').textContent = `${selectedFarm} January Combined`;
+            document.getElementById('mayco-title').textContent = `${selectedFarm} May Combined`;
+    
+            // Update button and form colors based on selected farm
+            const generateButton = document.getElementById('generate-button');
+            const formSection = document.getElementById('generic-form');
+            const dropdown = document.querySelector('select'); // Get the dropdown element
+    
+            if (selectedFarm === 'Gunnedah') {
+                formTitle.classList.replace('bg-green-700', 'bg-blue-800');
+                generateButton.classList.replace('bg-green-700', 'bg-blue-800');
+                generateButton.classList.replace('hover:bg-green-900', 'hover:bg-blue-900');
+                formSection.classList.replace('bg-green-50', 'bg-blue-50');
+                dropdown.classList.replace('bg-green-700', 'bg-blue-800'); // Update dropdown color
+            } else if (selectedFarm === 'Suntop') {
+                formTitle.classList.replace('bg-blue-800', 'bg-green-700');
+                generateButton.classList.replace('bg-blue-800', 'bg-green-700');
+                generateButton.classList.replace('hover:bg-blue-900', 'hover:bg-green-900');
+                formSection.classList.replace('bg-blue-50', 'bg-green-50');
+                dropdown.classList.replace('bg-blue-800', 'bg-green-700'); // Update dropdown color
+            }
+        }
+    
+        $(document).ready(function () {
+            // Automatically trigger the form update for default farm on page load
+            updateForm(document.querySelector('select')); // Call the updateForm function with the default selection
+    
+            $('#upload-form').on('submit', function (event) {
+                event.preventDefault(); // Prevent form submission
+                $('#loading-indicator').removeClass('hidden');
+                let formData = new FormData(this);
+    
+                $.ajax({
+                    url: '/calculate',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        // Dynamically inject the graphs into the page
+                        $('#jan-production').html(response.production.january);
+                        $('#may-production').html(response.production.may);
+                        $('#jan-revenue').html(response.revenue1);
+                        $('#may-revenue').html(response.revenue2);
+                        $('#jan-difference').html(response.difference.january);
+                        $('#may-difference').html(response.difference.may);
+                        $('#jan-combined').html(response.combined1);
+                        $('#may-combined').html(response.combined2);
+                        $('#loading-indicator').addClass('hidden'); // Hide loading indicator on success
+
+                    },
+                    error: function (xhr) {
+                        alert(`Error: ${xhr.responseJSON.error}`);
+                        $('#loading-indicator').addClass('hidden'); // Hide loading indicator on error
+
+                    }
+                });
+            });
+        });
+    </script>
+    
+
 </body>
 </html>

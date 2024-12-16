@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,jsonify
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -10,9 +10,8 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
-
-@app.route("/graphs", methods=["POST"])
-def overall():
+@app.route("/calculate", methods=["POST"])
+def Calculate():
     if request.method == "POST":
         try:
             # Retrieve uploaded files
@@ -79,12 +78,12 @@ def overall():
             may_diff = pd.concat([may_data['sitetime'].reset_index(drop=True), july_total_data], axis=1)
             may_diff.columns = ['sitetime', 'Net Production (kWh)']
             # Print shapes for verification
-            print("January Data Converted Shape:", jan_data_converted.shape)
-            print("July Data Converted Shape:", july_data_converted.shape)
-            print("Revenue January Shape:", revenue_jan_export.shape)
-            print("Revenue July Shape:", revenue_july_export.shape)
-            print("Final January Data Shape:", jan_total_data_full.shape)
-            print("Final July Data Shape:", july_total_data_full.shape)
+            # print("January Data Converted Shape:", jan_data_converted.shape)
+            # print("July Data Converted Shape:", july_data_converted.shape)
+            # print("Revenue January Shape:", revenue_jan_export.shape)
+            # print("Revenue July Shape:", revenue_july_export.shape)
+            # print("Final January Data Shape:", jan_total_data_full.shape)
+            # print("Final July Data Shape:", july_total_data_full.shape)
 
             # Step 3: Calculate difference
             # jan_diff, may_diff = difference(production_file, revenue_file1, revenue_file2)
@@ -110,13 +109,16 @@ def overall():
                     {"production": "orange", "revenue": "red", "difference": "green"}
                 )
             }
-
-            # print("Graphs generated successfully. Rendering the template.")
-            return render_template("graphs.html", graphs=graphs)
-
+            return jsonify({
+                'production': graphs['production'],
+                'revenue1': graphs['revenue1'],
+                'revenue2': graphs['revenue2'],
+                'difference': graphs['difference'],
+                'combined1': graphs['combined_jan'], 
+                'combined2': graphs['combined_may'],
+            })
         except Exception as e:
-            # print(f"Error occurred in `/gunnedah` route: {str(e)}")
-            return f"Error occurred: {str(e)}"
+            return jsonify({"error": str(e)}), 400
 
 
 def process_production_file(file):
@@ -149,7 +151,7 @@ def process_production_file(file):
     time_interval_hours = 5 / 60  # 5-minute intervals
 
     df["total_production_kwh"] = (df["total_production"] * system_voltage / 1000) * time_interval_hours
-    print(df.head(2))
+    # print(df.head(2))
     
     df["sitetime"] = pd.to_datetime(df["sitetime"], errors="coerce")
     
@@ -247,8 +249,8 @@ def generate_difference_graph(jan_diff, may_diff, title):
         if jan_diff is None or may_diff is None or jan_diff.empty or may_diff.empty:
             raise ValueError("Input data for graphs is missing or empty.")
  
-        print("January Difference Data (Head):")
-        print(jan_diff.head())  # Debug print for January difference data
+        # print("January Difference Data (Head):")
+        # print(jan_diff.head())  # Debug print for January difference data
  
         # Generate graph for January difference
         fig_jan = px.line(
@@ -275,7 +277,7 @@ def generate_difference_graph(jan_diff, may_diff, title):
             "may": pio.to_html(fig_may, full_html=False),
         }
     except Exception as e:
-        print(f"Error generating difference graph: {e}")
+        # print(f"Error generating difference graph: {e}")
         return {
             "january": f"Error generating January graph: {e}",
             "may": f"Error generating May graph: {e}",
@@ -327,7 +329,7 @@ def generate_combined_graph(data, revenue, diff, title, color_scheme):
         return pio.to_html(fig, full_html=False)
 
     except Exception as e:
-        print(f"Error generating combined graph: {e}")
+        # print(f"Error generating combined graph: {e}")
         return f"Error generating graph: {e}"
 
 if __name__ == "__main__":
