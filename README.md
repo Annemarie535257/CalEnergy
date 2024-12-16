@@ -6,7 +6,7 @@
 
 git clone https://github.com/Annemarie535257/CalEnergy.git
 
-cd <CalEnergy>
+cd CalEnergy
 
 ### Create and activate a virtual environment:
 
