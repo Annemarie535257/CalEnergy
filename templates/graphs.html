@@ -51,6 +51,7 @@
 
         h1, h2 {
             color: #004080;
+            text-align: center;
         }
 
         .container {
@@ -87,14 +88,32 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .graph-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
         .graph-content {
             text-align: center;
+        }
+
+        /* Combined Graph Styling */
+        .full-width-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .full-width-graph {
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .full-width-graph iframe {
+            width: 100%;
+            height: 80vh; /* Full height for combined graphs */
         }
     </style>
 </head>
@@ -109,8 +128,8 @@
     </header>
 
     <div class="container">
-        <!-- Gunnedah Solar Farm Production Graph -->
-        <h2>Gunnedah Solar Farm - Total Energy Production</h2>
+        <!-- Solar Farm Production Graph -->
+        <h2>Total Energy Production (Kwh)</h2>
         <div class="graph-section-container">
             <div class="section">
                 <h3>January Production</h3>
@@ -130,8 +149,8 @@
             </div>
         </div>
 
-        <!-- Gunnedah Revenue Meter Graphs -->
-        <h2>Gunnedah Revenue Meter Graphs</h2>
+        <!-- Revenue Meter Graphs -->
+        <h2>Revenue Meter Graphs (Kwh)</h2>
         <div class="graph-section-container">
             <div class="section">
                 <h3>January Revenue</h3>
@@ -151,8 +170,8 @@
             </div>
         </div>
 
-        <!-- Gunnedah Difference Graphs -->
-        <h2>Gunnedah Production vs Revenue Difference</h2>
+        <!-- Difference Graphs -->
+        <h2>Difference Graphs</h2>
         <div class="graph-section-container">
             <div class="section">
                 <h3>January Difference</h3>
@@ -168,6 +187,28 @@
                     <div class="graph-content">
                         {{ graphs.difference.may | safe }}
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combined January Graph -->
+        <h2>January Combined Metrics(Total Production, Revenue Meter(Exported), Difference)</h2>
+        <div class="full-width-section">
+            <h3>January Metrics</h3>
+            <div class="full-width-graph">
+                <div class="graph-content">
+                    {{ graphs.combined_jan | safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Combined May Graph -->
+        <h2>May Combined Metrics</h2>
+        <div class="full-width-section">
+            <h3>May Metrics</h3>
+            <div class="full-width-graph">
+                <div class="graph-content">
+                    {{ graphs.combined_may | safe }}
                 </div>
             </div>
         </div>
