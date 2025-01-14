@@ -166,38 +166,55 @@ def process_production_file(file):
     df["sitetime"] = pd.to_datetime(df["sitetime"], errors="coerce")
     df.dropna(subset=["sitetime"], inplace=True)
 
-    # Step 5: Implement Exponential Moving Average (EMA)
-    weight_constant = 0.75  # Weight for EMA (equivalent to $WD$1 in Excel)
-    threshold_factor = 0.75  # Threshold for significant deviation (equivalent to $WF$1 in Excel)
+    # Constants
+    WF = 10000  # Threshold for moving average condition
+    WH = 0.8    # Relative threshold for deviation
+    weight_constant = 0.85  # Smoothing factor for EMA
 
-    # Initialize EMA column
+    # Step 5: Calculate Moving Average
     df["moving_average"] = 0.0
+    for i in range(len(df)):
+        if i == 0:
+            if df.loc[i, "total_production"] < WF:
+                df.loc[i, "moving_average"] = 0
+            else:
+                df.loc[i, "moving_average"] = df.loc[i, "total_production"] * (1 - weight_constant)
+        else:
+            if df.loc[i, "total_production"] < WF:
+                df.loc[i, "moving_average"] = 0
+            else:
+                df.loc[i, "moving_average"] = (
+                    df.loc[i - 1, "moving_average"] * weight_constant
+                    + df.loc[i, "total_production"] * (1 - weight_constant)
+                )
 
-    # Set the first value of EMA to the first total production value
-    if not df.empty:
-        df.loc[0, "moving_average"] = df.loc[0, "total_production"]
-
-    # Calculate EMA iteratively
-    for i in range(1, len(df)):
-        df.loc[i, "moving_average"] = (
-            df.loc[i - 1, "moving_average"] * weight_constant
-            + df.loc[i, "total_production"] * (1 - weight_constant)
-        )
-
-    # Step 6: Calculate Deviation
-    df["deviation"] = df["total_production"] - df["moving_average"]
-
-    # Step 7: Flag Deviations Based on Relative Threshold
+    # Step 6: Calculate Deviation Tag
     df["deviation_tag"] = df.apply(
-        lambda row: 1 if (row["moving_average"] != 0 and row["total_production"] < threshold_factor * row["moving_average"]) else 0,
+        lambda row: 1 if (
+            row["moving_average"] != 0 and
+            row["total_production"] < WH * row["moving_average"]
+        ) else 0,
+        axis=1
+    )
+
+    # Step 7: Calculate Deviation Tag with Time
+    df["deviation_tag_with_time"] = df.apply(
+        lambda row: row["deviation_tag"] if (row["sitetime"].hour > 10 and row["sitetime"].hour < 15) else 0,
         axis=1
     )
 
     # Step 8: Calculate Energy Lost
     df["energy_lost"] = df.apply(
-        lambda row: abs(row["deviation"]) * (5 / 60) if row["deviation_tag"] == 1 else 0,
+        lambda row: (row["moving_average"] - row["total_production"]) * time_interval_hours
+        if row["deviation_tag_with_time"] == 1 and (row["moving_average"] - row["total_production"]) > 0 else 0,
         axis=1
     )
+
+    # Debug Export: Save intermediate results to a CSV file for comparison with Excel
+    debug_columns = ["sitetime", "total_production", "moving_average", "deviation_tag", "deviation_tag_with_time", "energy_lost"]
+    debug_output_path = "debug_output.csv"  # Replace with your desired file path
+    df[debug_columns].to_csv(debug_output_path, index=False)
+    print(f"Debug output saved to {debug_output_path}")
 
     # Step 9: Filter data for January and May
     jan_data = df[df["sitetime"].dt.month == 1]
@@ -205,49 +222,53 @@ def process_production_file(file):
 
     return jan_data, may_data
 
+
 def detect_dips(data, month_name):
     # Initialize variables to track dips
     dips = []
     ongoing_dip = False
     dip_start = None
     dip_energy_lost = 0
+    WH = 0.8  # Relative threshold for significant deviations
 
     for i in range(len(data)):
         current_time = data.iloc[i]["sitetime"]
         current_total_production = data.iloc[i]["total_production"]
         current_moving_average = data.iloc[i]["moving_average"]
-        deviation_tag = data.iloc[i]["deviation_tag"]
+        deviation_tag_with_time = data.iloc[i]["deviation_tag_with_time"]  # Updated to use deviation_tag_with_time
 
         # Restrict to time window of 10 AM to 3 PM
         if current_time.hour < 10 or current_time.hour >= 15:
             continue
-
-        # Use deviation tag to determine if this row contributes to a dip
-        if deviation_tag == 1:
-            if not ongoing_dip:
-                # Start a new dip
-                dip_start = current_time
-                ongoing_dip = True
-
-            # Calculate energy lost using the same formula from `process_production_file`
-            dip_energy_lost += abs(current_total_production - current_moving_average) * (5 / 60)
-
         else:
-            if ongoing_dip:
-                # End the dip
-                dip_end = current_time
-                dip_duration = (dip_end - dip_start).total_seconds() / 60  # Duration in minutes
+            # Use the same deviation tag logic from process_production_file
+            if (
+                current_moving_average != 0 and
+                deviation_tag_with_time == 1  # Updated condition
+            ):
+                if not ongoing_dip:
+                    # Start a new dip
+                    dip_start = current_time
+                    ongoing_dip = True
 
-                dips.append({
-                    "start_time": dip_start,
-                    "end_time": dip_end,
-                    "energy_lost": dip_energy_lost,
-                    "duration_minutes": dip_duration,
-                })
+                # Accumulate energy lost using the same formula from process_production_file
+                dip_energy_lost += abs(current_total_production - current_moving_average) * (5 / 60)
+            else:
+                if ongoing_dip:
+                    # End the dip
+                    dip_end = current_time
+                    dip_duration = (dip_end - dip_start).total_seconds() / 60  # Duration in minutes
 
-                # Reset dip tracking variables
-                ongoing_dip = False
-                dip_energy_lost = 0
+                    dips.append({
+                        "start_time": dip_start,
+                        "end_time": dip_end,
+                        "energy_lost": dip_energy_lost,
+                        "duration_minutes": dip_duration,
+                    })
+
+                    # Reset dip tracking variables
+                    ongoing_dip = False
+                    dip_energy_lost = 0
 
     # Capture any ongoing dip at the end of the loop
     if ongoing_dip:
@@ -272,7 +293,6 @@ def detect_dips(data, month_name):
     print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
 
     return dips, total_energy_lost
-
 
 # Function to process revenue file
 def process_revenue_file(file):
