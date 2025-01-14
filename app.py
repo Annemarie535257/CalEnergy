@@ -187,6 +187,7 @@ def process_production_file(file):
                     df.loc[i - 1, "moving_average"] * weight_constant
                     + df.loc[i, "total_production"] * (1 - weight_constant)
                 )
+    df["deviation"] = df["total_production"] - df["moving_average"]
 
     # Step 6: Calculate Deviation Tag
     df["deviation_tag"] = df.apply(
@@ -211,10 +212,10 @@ def process_production_file(file):
     )
 
     # Debug Export: Save intermediate results to a CSV file for comparison with Excel
-    debug_columns = ["sitetime", "total_production", "moving_average", "deviation_tag", "deviation_tag_with_time", "energy_lost"]
-    debug_output_path = "debug_output.csv"  # Replace with your desired file path
-    df[debug_columns].to_csv(debug_output_path, index=False)
-    print(f"Debug output saved to {debug_output_path}")
+    # debug_columns = ["sitetime", "total_production", "moving_average", "deviation_tag", "deviation_tag_with_time", "energy_lost"]
+    # debug_output_path = "debug_output.csv"  # Replace with your desired file path
+    # df[debug_columns].to_csv(debug_output_path, index=False)
+    # print(f"Debug output saved to {debug_output_path}")
 
     # Step 9: Filter data for January and May
     jan_data = df[df["sitetime"].dt.month == 1]
@@ -399,7 +400,7 @@ def generate_combined_graph(data, title, color_map):
             x=data['sitetime'], 
             y=data['deviation'], 
             mode='markers',
-            name=f"{title} Deviation",
+            name=f"{title} deviation",
             marker=dict(color=color_map["deviation"], size=6)
         ))
 
