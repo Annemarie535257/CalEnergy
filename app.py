@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request,jsonify
+from flask import Flask, render_template, request,jsonify, redirect, url_for, session, flash
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -6,10 +6,29 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
+master_password = "pxllc01"
+app.config['SECRET_KEY'] = 'pxllc01'
 
-@app.route("/")
+
+@app.route("/CalEnegy")
 def home():
     return render_template("index.html")
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        password = request.form['password']
+        if password == master_password:
+            session['logged_in'] = True
+            flash(f"Welcome, logging in...")
+            return redirect(url_for('home'))
+
+        else:
+            error = "Incorrect password. Please try again."
+
+    return render_template('login.html', app_title= "CalEnergy", error=error)
+
 
 @app.route("/calculate", methods=["POST"])
 def Calculate():
@@ -87,7 +106,6 @@ def Calculate():
                 "production": generate_graph(jan_data, may_data, "Production"),
                 "revenue1": generate_revenue_graph(revenue_jan, "Revenue Meter (January)"),
                 "revenue2": generate_revenue_graph(revenue_may, "Revenue Meter (May)"),
-                "difference": generate_difference_graph(jan_total_data_full, july_total_data_full, "Production vs Revenue Difference"),
                 "combined_jan": generate_combined_graph(
                     jan_data,
                     "January Combined Metrics",
@@ -113,7 +131,6 @@ def Calculate():
                 'production': graphs['production'],
                 'revenue1': graphs['revenue1'],
                 'revenue2': graphs['revenue2'],
-                'difference': graphs['difference'],
                 'combined1': graphs['combined_jan'],
                 'combined2': graphs['combined_may'],
             })
@@ -335,45 +352,6 @@ def generate_revenue_graph(df, title):
     except Exception as e:
         return f"Error generating graph: {str(e)}"
 
-def generate_difference_graph(jan_diff, may_diff, title):
-    try:
-        if jan_diff is None or may_diff is None or jan_diff.empty or may_diff.empty:
-            raise ValueError("Input data for graphs is missing or empty.")
- 
-        # print("January Difference Data (Head):")
-        # print(jan_diff.head())  # Debug print for January difference data
- 
-        # Generate graph for January difference
-        fig_jan = px.line(
-            jan_diff,
-            x="sitetime",
-            y="Net Production (kWh)",
-            title=f"{title} - January",
-            labels={"sitetime": "Date",
-                    "Net Production (kWh)": "Net Difference (kWh)"}
-        )
- 
-        # Generate graph for May difference
-        fig_may = px.line(
-            may_diff,
-            x="sitetime",
-            y="Net Production (kWh)",
-            title=f"{title} - May",
-            labels={"sitetime": "Date",
-                    "Net Production (kWh)": "Net Difference (kWh)"}
-        )
- 
-        return {
-            "january": pio.to_html(fig_jan, full_html=False),
-            "may": pio.to_html(fig_may, full_html=False),
-        }
-    except Exception as e:
-        # print(f"Error generating difference graph: {e}")
-        return {
-            "january": f"Error generating January graph: {e}",
-            "may": f"Error generating May graph: {e}",
-        }
-
 def generate_combined_graph(data, title, color_map):
     try:
         fig = go.Figure()
@@ -427,4 +405,4 @@ def generate_combined_graph(data, title, color_map):
         return f"Error generating graph: {e}"
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)

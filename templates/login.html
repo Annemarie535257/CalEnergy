@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calenergy Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="{{ url_for('static', filename='images/Pontem_logo.png') }}" type="image/x-icon">
+</head>
+<body class="h-screen bg-sky-50 flex items-center justify-center bg-cover bg-center" style="background-image: url('/static/images/RobotOnly.svg');">
+    <!-- Login Box -->
+    <div class="bg-cyan-50 shadow-lg rounded-lg p-8 w-96 border border-cyan-800">
+        <!-- App Title -->
+        <div class="flex items-center gap-4 justify-center mb-8">
+            <img src="{{ url_for('static', filename='images/pontem.jpeg') }}" alt="Logo" class="h-24">
+            <h1 class="text-cyan-900 text-xl font-bold">{{ app_title }}</h1>
+        </div>
+        
+        <!-- Login Form -->
+        <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
+            <div>
+                <label for="password" class="block text-gray-700 font-medium">Enter Password:</label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    id="password" 
+                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-cyan-700 focus:outline-none" 
+                />
+            </div>
+
+            <button 
+                type="submit" 
+                class="w-full bg-cyan-800 text-white font-semibold py-2 rounded-lg hover:bg-cyan-900 transition-all shadow-md">
+                Log In
+            </button>
+        </form>
+
+        {% if error %}
+        <span class="block mt-4 text-red-600 text-sm">{{ error }}</span>
+        {% endif %}
+    </div>
+</body>
+</html>
