@@ -113,7 +113,8 @@ def Calculate():
                         "production": "orange",
                         "moving_average": "green",
                         "deviation": "red"
-                    }
+                    },
+                    jan_total_energy_lost  # Pass total energy lost for January
                 ),
                 "combined_may": generate_combined_graph(
                     may_data,
@@ -122,7 +123,8 @@ def Calculate():
                         "production": "blue",
                         "moving_average": "purple",
                         "deviation": "pink"
-                    }
+                    },
+                    may_total_energy_lost  # Pass total energy lost for January
                 ),
             }
 
@@ -373,7 +375,7 @@ def generate_revenue_graph(df, title):
     except Exception as e:
         return f"Error generating graph: {str(e)}"
 
-def generate_combined_graph(data, title, color_map):
+def generate_combined_graph(data, title, color_map, total_energy_lost):
     try:
         fig = go.Figure()
 
@@ -404,6 +406,15 @@ def generate_combined_graph(data, title, color_map):
             marker=dict(color=color_map["deviation"], size=6)
         ))
 
+        # Add total energy lost as an annotation
+        fig.add_annotation(
+            text=f"Total Energy Lost: {total_energy_lost:.2f} kWh",
+            xref="paper", yref="paper",
+            x=0.5, y=-0.2, showarrow=False,
+            font=dict(size=12, color="black"),
+            align="center"
+        )
+
         # Update layout for better zoom and scaling
         fig.update_layout(
             title=title,
@@ -416,7 +427,8 @@ def generate_combined_graph(data, title, color_map):
                 title='Energy (kW)',
             ),
             legend=dict(title="Metrics"),
-            template="plotly_white"
+            template="plotly_white",
+            margin=dict(b=120)  # Adjust bottom margin to fit annotation
         )
 
         # Convert Plotly figure to HTML
