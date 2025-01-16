@@ -51,6 +51,7 @@ def Calculate():
             # Detect dips for January and May
             jan_dips, jan_total_energy_lost = detect_dips(jan_data, "January")
             may_dips, may_total_energy_lost = detect_dips(may_data, "May")
+           
 
 
             required_columns = ['total_production', 'sitetime']
@@ -135,6 +136,8 @@ def Calculate():
                 'revenue2': graphs['revenue2'],
                 'combined1': graphs['combined_jan'],
                 'combined2': graphs['combined_may'],
+                'energy1': jan_total_energy_lost,
+                'energy2': may_total_energy_lost,
             })
         except Exception as e:
             return jsonify({"error": str(e)}), 400
@@ -288,12 +291,12 @@ def detect_dips(data, month_name):
     total_energy_lost = sum(dip["energy_lost"] for dip in dips)
 
     # Print dip details
-    print(f"\n{month_name} Dips (10 AM to 3 PM):")
-    print(f"Total Dips Detected: {len(dips)}")
-    for dip in dips:
-        print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} kWh")
+    # print(f"\n{month_name} Dips (10 AM to 3 PM):")
+    # print(f"Total Dips Detected: {len(dips)}")
+    # for dip in dips:
+    #     print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} kWh")
 
-    print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
+    # print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
 
     return dips, total_energy_lost
 

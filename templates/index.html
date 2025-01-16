@@ -113,16 +113,22 @@
             </div>
 
         </div>
-        
         <div class="border p-6 rounded-lg bg-green-100">
             <h2 id="janco-title" class="text-xl font-bold mb-4 text-center"></h2>
             <div id="jan-combined" class="graph-content"></div>
         </div>
-
-       
         <div class="border p-6 rounded-lg bg-slate-200">
+            <h2 id="jan-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="jan-energy" class="graph-content align-center"></div>
+        </div>  
+
+        <div class="border p-6 rounded-lg bg-green-100">
             <h2 id="mayco-title" class="text-xl font-bold mb-4 text-center"></h2>
             <div id="may-combined" class="graph-content"></div>
+        </div>
+        <div class="border p-6 rounded-lg bg-slate-200">
+            <h2 id="may-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
+            <div id="may-energy" class="graph-content align-center"></div>
         </div>
 
         <script>
@@ -136,6 +142,8 @@
                 document.getElementById('may-revenue').innerHTML = '';
                 document.getElementById('jan-combined').innerHTML = '';
                 document.getElementById('may-combined').innerHTML = '';
+                document.getElementById('jan-energy').innerHTML = '';
+                document.getElementById('may-energy').innerHTML = '';
         
                 // Reset form inputs
                 document.getElementById('upload-form').reset();
@@ -150,6 +158,8 @@
                 document.getElementById('mayr-title').textContent = `${selectedFarm} May Revenue`;
                 document.getElementById('janco-title').textContent = `${selectedFarm} January Combined`;
                 document.getElementById('mayco-title').textContent = `${selectedFarm} May Combined`;
+                document.getElementById('jan-energytitle').textContent = `${selectedFarm} January energy Lost`;
+                document.getElementById('may-energytitle').textContent = `${selectedFarm} May energy Lost`;
         
                 // Update button and form colors based on selected farm
                 const generateButton = document.getElementById('generate-button');
@@ -180,6 +190,8 @@
                             $('#may-revenue').html(response.revenue2);
                             $('#jan-combined').html(response.combined1);
                             $('#may-combined').html(response.combined2);
+                            $('#jan-energy').html(response.energy1);
+                            $('#may-energy').html(response.energy2);
                             $('#loading-indicator').addClass('hidden'); // Hide loading indicator on success
 
                         },
