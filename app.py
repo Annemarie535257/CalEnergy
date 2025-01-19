@@ -102,6 +102,9 @@ def Calculate():
             may_diff = pd.concat([may_data['sitetime'].reset_index(drop=True), july_total_data], axis=1)
             may_diff.columns = ['sitetime', 'Net Production (kWh)']
 
+            # Generate Energy Lost Graph
+            energy_lost_graph = generate_energy_lost_graph(jan_data, may_data)
+
             # Step 4: Generate graphs
             graphs = {
                 "production": generate_graph(jan_data, may_data, "Production"),
@@ -115,7 +118,6 @@ def Calculate():
                         "moving_average": "green",
                         "deviation": "red"
                     },
-                    jan_total_energy_lost  # Pass total energy lost for January
                 ),
                 "combined_may": generate_combined_graph(
                     may_data,
@@ -125,7 +127,6 @@ def Calculate():
                         "moving_average": "purple",
                         "deviation": "pink"
                     },
-                    may_total_energy_lost  # Pass total energy lost for January
                 ),
             }
 
@@ -138,6 +139,11 @@ def Calculate():
                 'combined2': graphs['combined_may'],
                 'energy1': jan_total_energy_lost,
                 'energy2': may_total_energy_lost,
+                'energy_lost_graph': {
+
+                  'january': energy_lost_graph['january'],  # January Energy Lost Graph
+                  'may': energy_lost_graph['may'],  # May Energy Lost Graph
+    },
             })
         except Exception as e:
             return jsonify({"error": str(e)}), 400
@@ -291,12 +297,12 @@ def detect_dips(data, month_name):
     total_energy_lost = sum(dip["energy_lost"] for dip in dips)
 
     # Print dip details
-    # print(f"\n{month_name} Dips (10 AM to 3 PM):")
-    # print(f"Total Dips Detected: {len(dips)}")
-    # for dip in dips:
-    #     print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} kWh")
+    print(f"\n{month_name} Dips (10 AM to 3 PM):")
+    print(f"Total Dips Detected: {len(dips)}")
+    for dip in dips:
+        print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} kWh")
 
-    # print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
+    print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
 
     return dips, total_energy_lost
 
@@ -378,7 +384,7 @@ def generate_revenue_graph(df, title):
     except Exception as e:
         return f"Error generating graph: {str(e)}"
 
-def generate_combined_graph(data, title, color_map, total_energy_lost):
+def generate_combined_graph(data, title, color_map):
     try:
         fig = go.Figure()
 
@@ -409,15 +415,6 @@ def generate_combined_graph(data, title, color_map, total_energy_lost):
             marker=dict(color=color_map["deviation"], size=6)
         ))
 
-        # Add total energy lost as an annotation
-        fig.add_annotation(
-            text=f"Total Energy Lost: {total_energy_lost:.2f} kWh",
-            xref="paper", yref="paper",
-            x=0.5, y=-0.2, showarrow=False,
-            font=dict(size=12, color="black"),
-            align="center"
-        )
-
         # Update layout for better zoom and scaling
         fig.update_layout(
             title=title,
@@ -431,7 +428,6 @@ def generate_combined_graph(data, title, color_map, total_energy_lost):
             ),
             legend=dict(title="Metrics"),
             template="plotly_white",
-            margin=dict(b=120)  # Adjust bottom margin to fit annotation
         )
 
         # Convert Plotly figure to HTML
@@ -439,6 +435,35 @@ def generate_combined_graph(data, title, color_map, total_energy_lost):
 
     except Exception as e:
         return f"Error generating graph: {e}"
+
+def generate_energy_lost_graph(jan_data, may_data):
+    # Filter data for 10 AM to 3 PM
+    jan_filtered = jan_data[(jan_data['sitetime'].dt.hour >= 10) & (jan_data['sitetime'].dt.hour < 15)]
+    may_filtered = may_data[(may_data['sitetime'].dt.hour >= 10) & (may_data['sitetime'].dt.hour < 15)]
+
+    # Create Plotly line charts for energy lost
+    fig_jan = px.line(
+        jan_filtered, 
+        x="sitetime", 
+        y="energy_lost", 
+        title="January Energy Lost", 
+        labels={"sitetime": "Time", "energy_lost": "Energy Lost (kWh)"}
+    )
+    fig_may = px.line(
+        may_filtered, 
+        x="sitetime", 
+        y="energy_lost", 
+        title="May Energy Lost", 
+        labels={"sitetime": "Time", "energy_lost": "Energy Lost (kWh)"}
+    )
+
+    # Convert figures to HTML
+    return {
+        'january': pio.to_html(fig_jan, full_html=False),
+        'may': pio.to_html(fig_may, full_html=False),
+    }
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
