@@ -116,7 +116,7 @@ def Calculate():
                     {
                         "production": "orange",
                         "moving_average": "green",
-                        "deviation": "red"
+                        "deviation_tag_with_time": "red"
                     },
                 ),
                 "combined_may": generate_combined_graph(
@@ -125,7 +125,7 @@ def Calculate():
                     {
                         "production": "blue",
                         "moving_average": "purple",
-                        "deviation": "pink"
+                        "deviation_tag_with_time": "pink"
                     },
                 ),
             }
@@ -198,7 +198,6 @@ def process_production_file(file):
                     df.loc[i - 1, "moving_average"] * weight_constant
                     + df.loc[i, "total_production"] * (1 - weight_constant)
                 )
-    df["deviation"] = df["total_production"] - df["moving_average"]
 
     # Step 6: Calculate Deviation Tag
     df["deviation_tag"] = df.apply(
@@ -214,6 +213,9 @@ def process_production_file(file):
         lambda row: row["deviation_tag"] if (row["sitetime"].hour > 10 and row["sitetime"].hour < 15) else 0,
         axis=1
     )
+
+    # df["deviation_tag_with_time"] = df["deviation_tag_with_time"] * df["total_production"].max() * 0.1  # Adjust scale
+
 
     # Step 8: Calculate Energy Lost
     df["energy_lost"] = df.apply(
@@ -297,12 +299,12 @@ def detect_dips(data, month_name):
     total_energy_lost = sum(dip["energy_lost"] for dip in dips)
 
     # Print dip details
-    print(f"\n{month_name} Dips (10 AM to 3 PM):")
-    print(f"Total Dips Detected: {len(dips)}")
-    for dip in dips:
-        print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} kWh")
+    # print(f"\n{month_name} Dips (10 AM to 3 PM):")
+    # print(f"Total Dips Detected: {len(dips)}")
+    # for dip in dips:
+    #     print(f"- Dip from {dip['start_time']} to {dip['end_time']} (Duration: {dip['duration_minutes']} mins): Energy Lost = {dip['energy_lost']} W")
 
-    print(f"Total Energy Lost in {month_name}: {total_energy_lost} kWh\n")
+    # print(f"Total Energy Lost in {month_name}: {total_energy_lost} W\n")
 
     return dips, total_energy_lost
 
@@ -338,11 +340,11 @@ def process_revenue_file(file):
 def generate_graph(df_jan, df_may, title):
     fig_jan = px.line(
         df_jan, x="sitetime", y="total_production",
-        title=f"{title} - January", labels={"sitetime": "Time", "total_production": "Total Production (Kw)"}
+        title=f"{title} - January", labels={"sitetime": "Time", "total_production": "Total Production (w)"}
     )
     fig_may = px.line(
         df_may, x="sitetime", y="total_production",
-        title=f"{title} - May", labels={"sitetime": "Time", "total_production": "Total Production (Kw)"}
+        title=f"{title} - May", labels={"sitetime": "Time", "total_production": "Total Production (w)"}
     )
     return {
         "january": pio.to_html(fig_jan, full_html=False),
@@ -393,7 +395,7 @@ def generate_combined_graph(data, title, color_map):
             x=data['sitetime'], 
             y=data['total_production'], 
             mode='lines',
-            name=f"{title} Total Production (kW)",
+            name=f"{title} Total Production (W)",
             line=dict(color=color_map["production"])
         ))
 
@@ -409,10 +411,10 @@ def generate_combined_graph(data, title, color_map):
         # Add deviation trace
         fig.add_trace(go.Scatter(
             x=data['sitetime'], 
-            y=data['deviation'], 
-            mode='markers',
-            name=f"{title} deviation",
-            marker=dict(color=color_map["deviation"], size=6)
+            y=data['deviation_tag_with_time'] * max(data['total_production']),  
+            mode='lines',
+            name=f"{title} deviation_tag_with_time",
+            line=dict(color=color_map["deviation_tag_with_time"], width=2, dash='solid')
         ))
 
         # Update layout for better zoom and scaling
@@ -424,7 +426,7 @@ def generate_combined_graph(data, title, color_map):
                 type='date',  # Ensure proper time scale
             ),
             yaxis=dict(
-                title='Energy (kW)',
+                title='Energy (W)',
             ),
             legend=dict(title="Metrics"),
             template="plotly_white",
@@ -447,14 +449,14 @@ def generate_energy_lost_graph(jan_data, may_data):
         x="sitetime", 
         y="energy_lost", 
         title="January Energy Lost", 
-        labels={"sitetime": "Time", "energy_lost": "Energy Lost (kWh)"}
+        labels={"sitetime": "Time", "energy_lost": "Energy Lost (W)"}
     )
     fig_may = px.line(
         may_filtered, 
         x="sitetime", 
         y="energy_lost", 
         title="May Energy Lost", 
-        labels={"sitetime": "Time", "energy_lost": "Energy Lost (kWh)"}
+        labels={"sitetime": "Time", "energy_lost": "Energy Lost (W)"}
     )
 
     # Convert figures to HTML
