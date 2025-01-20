@@ -23,47 +23,21 @@
             <!-- Form on the Left -->
             <form id="upload-form" method="POST" enctype="multipart/form-data" action="/calculate" class="w-3/4 pr-8 border-r">
                 <h2 id="form-title" class="bg-cyan-700 text-white text-xl p-4 rounded mb-8">Gunnedah Solar Farm</h2>
-                <div class="space-y-8">
-                    <div class="flex items-center mb-6">
-                        <label for="file_production" class="w-2/3 text-lg font-medium text-gray-700">Production CSV</label>
-                        <input
-                            type="file"
-                            id="file_production"
-                            name="file_production"
-                            accept=".csv"
-                            class="w-2/3 border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-                    </div>
-
-                    
-                    
-                    <div class="flex items-center mb-6">
-                        <label for="file_revenue1" class="w-2/3 text-lg font-medium text-gray-700">First Revenue Meter CSV</label>
-                        <input
-                            type="file"
-                            id="file_revenue1"
-                            name="file_revenue1"
-                            accept=".csv"
-                            class="w-2/3 border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-                    </div>
-                    
-
-                    <div class="flex items-center mb-6">
-                        <label for="file_revenue2" class="w-2/3 text-lg font-medium text-gray-700">Second Revenue Meter CSV</label>
-                        <input
-                            type="file"
-                            id="file_revenue2"
-                            name="file_revenue2"
-                            accept=".csv"
-                            class="w-2/3 border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-                    </div>
+                
+                <div class="flex items-center mb-6">
+                    <label for="file_production" class="w-2/3 text-lg font-medium text-gray-700">Production CSV</label>
+                    <input
+                        type="file"
+                        id="file_production"
+                        name="file_production"
+                        accept=".csv"
+                        class="w-2/3 border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
                 </div>
             </form>
 
             <!-- Buttons on the Right -->
-            <div class="w-0.5/4 pl-6 flex flex-col items-center justify-center space-y-52">
+            <div class="w-0.5/4 pl-6 flex flex-col items-center justify-center space-y-20">
                 <div class="dropdown">
                     <select
                         onchange="updateForm(this)"
@@ -74,7 +48,7 @@
                     </select>
                 </div>
 
-                <div id="loading-indicator" class="text-center hidden text-cyan-700 absolute top-16">
+                <div id="loading-indicator" class="text-center hidden text-cyan-700 absolute top-44">
                     Graphs are generating...
                 </div>
                 
@@ -102,48 +76,39 @@
                 <div id="may-production" class="graph-content"></div>
             </div>
 
-            <div class="border p-6 rounded-lg bg-green-100">
-                <h2 id="janr-title" class="text-xl font-bold mb-4 text-center"></h2>
-                <div id="jan-revenue" class="graph-content"></div>
-            </div>
-
-            <div class="border p-6 rounded-lg bg-slate-200">
-                <h2 id="mayr-title" class="text-xl font-bold mb-4 text-center"></h2>
-                <div id="may-revenue" class="graph-content"></div>
-            </div>
-
         </div>
-        <div class="border p-6 rounded-lg bg-green-100">
+        <div class="border p-6 rounded-lg bg-green-100 max-w-6xl mx-auto mt-2">
             <h2 id="janco-title" class="text-xl font-bold mb-4 text-center"></h2>
             <div id="jan-combined" class="graph-content"></div>
         </div>
-        
-        <div class="border p-6 rounded-lg bg-green-100">
+        <div class="border p-6 rounded-lg bg-slate-200 max-w-6xl mx-auto mt-2">
             <h2 id="mayco-title" class="text-xl font-bold mb-4 text-center"></h2>
             <div id="may-combined" class="graph-content"></div>
         </div>
         
-        <div class="border p-6 rounded-lg bg-green-100">
-            <h2 id="jan-energy-lost-title" class="text-xl font-bold mb-4 text-center">January Energy Lost</h2>
-            <div id="jan-energy-lost" class="graph-content align-center"></div>
-        </div>
-        <div></div>
-        <div class="border p-6 rounded-lg bg-slate-200">
-            <h2 id="jan-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
-            <div id="jan-energy" class="graph-content align-center"></div>
-        </div>  
 
-        
-        <div class="border p-6 rounded-lg bg-slate-200">
-            <h2 id="may-energy-lost-title" class="text-xl font-bold mb-4 text-center">May Energy Lost</h2>
-            <div id="may-energy-lost" class="graph-content align-center"></div>
-        </div>
-        <div></div>
-        <div class="border p-6 rounded-lg bg-slate-200">
-            <h2 id="may-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
-            <div id="may-energy" class="graph-content align-center"></div>
-        </div>
+        <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-w-6xl mx-auto">
 
+            <div class="border p-6 rounded-lg bg-green-100">
+                <h2 id="jan-energy-lost-title" class="text-xl font-bold mb-4 text-center"></h2>
+                <div id="jan-energy-lost" class="graph-content align-center"></div>
+            </div>
+
+            <div class="border p-6 rounded-lg bg-slate-200">
+                <h2 id="may-energy-lost-title" class="text-xl font-bold mb-4 text-center"></h2>
+                <div id="may-energy-lost" class="graph-content align-center"></div>
+            </div>
+
+            <div class="border p-6 rounded-lg bg-green-100">
+                <h2 id="jan-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
+                <div id="jan-energy" class="graph-content align-center"></div>
+            </div>  
+    
+            <div class="border p-6 rounded-lg bg-slate-200">
+                <h2 id="may-energytitle" class="text-xl font-bold mb-4 text-center"></h2>
+                <div id="may-energy" class="graph-content align-center"></div>
+            </div>
+        </div>
         <script>
             function updateForm(selectElement) {
                 const formTitle = document.getElementById('form-title');
@@ -151,14 +116,12 @@
                 // Clear the graph contents
                 document.getElementById('jan-production').innerHTML = '';
                 document.getElementById('may-production').innerHTML = '';
-                document.getElementById('jan-revenue').innerHTML = '';
-                document.getElementById('may-revenue').innerHTML = '';
                 document.getElementById('jan-combined').innerHTML = '';
                 document.getElementById('may-combined').innerHTML = '';
-                document.getElementById('jan-energy').innerHTML = '';
-                document.getElementById('may-energy').innerHTML = '';
                 document.getElementById('jan-energy-lost').innerHTML = '';
                 document.getElementById('may-energy-lost').innerHTML = '';
+                document.getElementById('jan-energy').innerHTML = '';
+                document.getElementById('may-energy').innerHTML = '';
         
                 // Reset form inputs
                 document.getElementById('upload-form').reset();
@@ -169,15 +132,12 @@
                 // Update graph titles
                 document.getElementById('janp-title').textContent = `${selectedFarm} January Production`;
                 document.getElementById('mayp-title').textContent = `${selectedFarm} May Production`;
-                document.getElementById('janr-title').textContent = `${selectedFarm} January Revenue`;
-                document.getElementById('mayr-title').textContent = `${selectedFarm} May Revenue`;
                 document.getElementById('janco-title').textContent = `${selectedFarm} January Combined`;
                 document.getElementById('mayco-title').textContent = `${selectedFarm} May Combined`;
-                document.getElementById('jan-energytitle').textContent = `${selectedFarm} January energy Lost`;
-                document.getElementById('may-energytitle').textContent = `${selectedFarm} May energy Lost`;
-                document.getElementById('jan-energy-lost-title').textContent = `${selectedFarm} January Energy Lost`;
-                document.getElementById('may-energy-lost-title').textContent = `${selectedFarm} May Energy Lost`;
-
+                document.getElementById('jan-energy-lost-title').textContent = `${selectedFarm} January Energy Lost Graph`;
+                document.getElementById('may-energy-lost-title').textContent = `${selectedFarm} May Energy Lost Graph`;
+                document.getElementById('jan-energytitle').textContent = `${selectedFarm} January energy Lost in Watts`;
+                document.getElementById('may-energytitle').textContent = `${selectedFarm} May energy Lost in Watts`;
         
                 // Update button and form colors based on selected farm
                 const generateButton = document.getElementById('generate-button');
@@ -204,15 +164,12 @@
                             // Dynamically inject the graphs into the page
                             $('#jan-production').html(response.production.january);
                             $('#may-production').html(response.production.may);
-                            $('#jan-revenue').html(response.revenue1);
-                            $('#may-revenue').html(response.revenue2);
                             $('#jan-combined').html(response.combined1);
                             $('#may-combined').html(response.combined2);
-                            $('#jan-energy').html(response.energy1);
+                            $('#jan-energy-lost').html(response.energy_lost1);
+                            $('#may-energy-lost').html(response.energy_lost2);
+                            $('#jan-energy').html(response.energy1) ;
                             $('#may-energy').html(response.energy2);
-                            $('#jan-energy-lost').html(response.energy_lost_graph.january);
-                            $('#may-energy-lost').html(response.energy_lost_graph.may);
- 
                             $('#loading-indicator').addClass('hidden'); // Hide loading indicator on success
 
                         },

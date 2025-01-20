@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalEnergy Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">CalEnergy Dashboard</h1>
+
+        <!-- File Upload Form -->
+        <form id="upload-form" method="POST" enctype="multipart/form-data" class="mb-6">
+            <div class="flex items-center justify-between">
+                <input type="file" id="file_production" name="file_production" accept=".csv" 
+                    class="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer p-3">
+                <button type="submit" id="generate-button"
+                    class="ml-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Upload & Generate Graphs
+                </button>
+            </div>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="text-center text-blue-600 font-bold hidden">
+            Processing... Please wait.
+        </div>
+
+        <!-- Graph Containers -->
+        <div id="graphs-container" class="mt-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-700 text-center mb-4">Graphs</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="border p-6 rounded-lg bg-gray-50 shadow">
+                    <h3 class="text-xl font-semibold text-center text-blue-500">January Production</h3>
+                    <div id="jan-production"></div>
+                </div>
+                <div class="border p-6 rounded-lg bg-gray-50 shadow">
+                    <h3 class="text-xl font-semibold text-center text-blue-500">May Production</h3>
+                    <div id="may-production"></div>
+                </div>
+            </div>
+
+            <div class="border p-6 rounded-lg bg-gray-50 shadow mt-4">
+                <h3 class="text-xl font-semibold text-center text-blue-500">January Combined Metrics</h3>
+                <div id="jan-combined"></div>
+            </div>
+
+            <div class="border p-6 rounded-lg bg-gray-50 shadow mt-4">
+                <h3 class="text-xl font-semibold text-center text-blue-500">May Combined Metrics</h3>
+                <div id="may-combined"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#upload-form").on("submit", function (event) {
+                event.preventDefault();  // Prevent default form submission
+                
+                let formData = new FormData(this);
+                $("#loading-indicator").removeClass("hidden");
+                $("#graphs-container").addClass("hidden");
+
+                $.ajax({
+                    url: '/calculate',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $("#loading-indicator").addClass("hidden");
+                        $("#graphs-container").removeClass("hidden");
+
+                        // Inject graphs into the page
+                        $("#jan-production").html(response.production.january);
+                        $("#may-production").html(response.production.may);
+                        $("#jan-combined").html(response.combined_jan);
+                        $("#may-combined").html(response.combined_may);
+                    },
+                    error: function (xhr) {
+                        alert(`Error: ${xhr.responseJSON.error}`);
+                        $("#loading-indicator").addClass("hidden");
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

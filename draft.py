@@ -1,17 +1,115 @@
-from flask import Flask, render_template, request,jsonify, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-import time
-import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 master_password = "pxllc01"
 app.config['SECRET_KEY'] = 'pxllc01'
 
+# Database configuration
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'calenergy.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Define the database model
+class ProductionData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sitetime = db.Column(db.DateTime, nullable=False)
+    total_production = db.Column(db.Float, nullable=False)
+    moving_average = db.Column(db.Float, nullable=True)
+    deviation_tag = db.Column(db.Integer, nullable=True)
+    deviation_tag_with_time = db.Column(db.Integer, nullable=True)
+    energy_lost = db.Column(db.Float, nullable=True)
+
+    # Dynamically add columns for each energy data
+    def __init__(self, sitetime, total_production, moving_average, deviation_tag, deviation_tag_with_time, energy_lost, **kwargs):
+        self.sitetime = sitetime
+        self.total_production = total_production
+        self.moving_average = moving_average
+        self.deviation_tag = deviation_tag
+        self.deviation_tag_with_time = deviation_tag_with_time
+        self.energy_lost = energy_lost
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+# Initialize the database
+with app.app_context():
+    db.create_all()
+
+def process_production_file(file):
+    try:
+        df = pd.read_csv(file)
+
+        if df.empty:
+            raise ValueError("The uploaded file is empty.")
+
+        df["sitetime"] = pd.to_datetime(df["sitetime"], errors="coerce")
+        df.dropna(subset=["sitetime"], inplace=True)
+
+        # Identify energy columns dynamically
+        energy_columns = [col for col in df.columns if "dci" in col and "/5min" in col]
+        if not energy_columns:
+            raise ValueError("No valid energy production columns found.")
+
+        df["total_production"] = df[energy_columns].sum(axis=1)
+
+        system_voltage = 1500  # volts
+        time_interval_hours = 5 / 60  # 5-minute intervals
+
+        df["total_production_kwh"] = (df["total_production"] * system_voltage / 1000) * time_interval_hours
+
+        # Calculate moving average
+        WF = 10000  # Threshold for moving average condition
+        WH = 0.8    # Relative threshold for deviation
+        weight_constant = 0.85  # Smoothing factor for EMA
+
+        df["moving_average"] = df["total_production"].ewm(span=5, adjust=False).mean()
+
+        # Calculate deviation tag
+        df["deviation_tag"] = df.apply(
+            lambda row: 1 if row["total_production"] < WH * row["moving_average"] else 0,
+            axis=1
+        )
+
+        df["deviation_tag_with_time"] = df.apply(
+            lambda row: row["deviation_tag"] if 10 <= row["sitetime"].hour < 15 else 0,
+            axis=1
+        )
+
+        df["energy_lost"] = df.apply(
+            lambda row: (row["moving_average"] - row["total_production"]) * time_interval_hours
+            if row["deviation_tag_with_time"] == 1 and row["moving_average"] > row["total_production"] else 0,
+            axis=1
+        )
+
+        # Store data into database
+        for _, row in df.iterrows():
+            record = ProductionData(
+                sitetime=row["sitetime"],
+                total_production=row["total_production"],
+                moving_average=row["moving_average"],
+                deviation_tag=row["deviation_tag"],
+                deviation_tag_with_time=row["deviation_tag_with_time"],
+                energy_lost=row["energy_lost"],
+                **{col: row[col] for col in energy_columns}
+            )
+            db.session.add(record)
+
+        db.session.commit()
+
+        jan_data = df[df["sitetime"].dt.month == 1]
+        may_data = df[df["sitetime"].dt.month == 5]
+
+        return jan_data, may_data
+
+    except Exception as e:
+        raise ValueError(f"Error processing file: {str(e)}")
 
 @app.route("/CalEnegy")
 def home():
@@ -37,27 +135,15 @@ def login():
 def Calculate():
     if request.method == "POST":
         try:
-            start_time = time.time()
             # Retrieve uploaded files
             production_file = request.files.get("file_production")
-            file_retrieval_end = time.time()
-            print(f"File retrieval time: {file_retrieval_end - start_time:.4f} seconds")
-
-            processing_start = time.time()
-            with ThreadPoolExecutor() as executor:
-                future = executor.submit(process_production_file, production_file)
-                jan_data, may_data = future.result()
-            processing_end = time.time()
-            print(f"File processing time: {processing_end - processing_start:.4f} seconds")
-
+            # Step 2: Process files
+            jan_data, may_data = process_production_file(production_file)
+          
             # Detect dips for January and May
-            dip_detection_start = time.time()
-
-            jan_total_energy_lost = detect_dips(jan_data, "January")
-            may_total_energy_lost = detect_dips(may_data, "May")
-            dip_detection_end = time.time()
-            print(f"Dip detection time: {dip_detection_end - dip_detection_start:.4f} seconds")
-
+            jan_dips, jan_total_energy_lost = detect_dips(jan_data, "January")
+            may_dips, may_total_energy_lost = detect_dips(may_data, "May")
+           
 
 
             required_columns = ['total_production', 'sitetime']
@@ -70,7 +156,7 @@ def Calculate():
             energy_lost_graph = generate_energy_lost_graph(jan_data, may_data)
 
             # Return the graphs as JSON response
-            response = jsonify({
+            return jsonify({
                 'production': generate_graph(jan_data, may_data, "Production"),
                 'combined1':  generate_combined_graph(
                     jan_data,
@@ -96,91 +182,8 @@ def Calculate():
                 'energy_lost2': energy_lost_graph["may"],
                 
             })
-            total_end_time = time.time()
-            print(f"Total execution time: {total_end_time - start_time:.4f} seconds")
-            return response
         except Exception as e:
             return jsonify({"error": str(e)}), 400
-
-
-def process_production_file(file):
-    # Step 1: Read the file
-    try:
-        df = pd.read_csv(file)
-    except Exception as e:
-        raise ValueError(f"Error reading file: {str(e)}")
-
-    # Step 2: Check if the dataframe is empty
-    if df.empty:
-        raise ValueError("The uploaded file is empty.")
-
-    # Step 3: Identify energy columns dynamically
-    energy_columns = [col for col in df.columns if "dci" in col and "/5min" in col]
-    if not energy_columns:
-        raise ValueError("No valid energy production columns found.")
-
-    # Step 4: Calculate total production
-    df["total_production"] = df[energy_columns].sum(axis=1)
-
-    system_voltage = 1500  # volts
-    time_interval_hours = 5 / 60  # 5-minute intervals
-
-    df["total_production_kwh"] = (df["total_production"] * system_voltage / 1000) * time_interval_hours
-    df["sitetime"] = pd.to_datetime(df["sitetime"], errors="coerce")
-    df.dropna(subset=["sitetime"], inplace=True)
-
-    # Constants
-    WF = 10000  # Threshold for moving average condition
-    WH = 0.8    # Relative threshold for deviation
-    weight_constant = 0.85  # Smoothing factor for EMA
-
-    # Step 5: Calculate Moving Average
-    df["moving_average"] = 0.0
-    for i in range(len(df)):
-        if i == 0:
-            if df.loc[i, "total_production"] < WF:
-                df.loc[i, "moving_average"] = 0
-            else:
-                df.loc[i, "moving_average"] = df.loc[i, "total_production"] * (1 - weight_constant)
-        else:
-            if df.loc[i, "total_production"] < WF:
-                df.loc[i, "moving_average"] = 0
-            else:
-                df.loc[i, "moving_average"] = (
-                    df.loc[i - 1, "moving_average"] * weight_constant
-                    + df.loc[i, "total_production"] * (1 - weight_constant)
-                )
-
-    # Step 6: Calculate Deviation Tag
-    df["deviation_tag"] = df.apply(
-        lambda row: 1 if (
-            row["moving_average"] != 0 and
-            row["total_production"] < WH * row["moving_average"]
-        ) else 0,
-        axis=1
-    )
-
-    # Step 7: Calculate Deviation Tag with Time
-    df["deviation_tag_with_time"] = df.apply(
-        lambda row: row["deviation_tag"] if (row["sitetime"].hour > 10 and row["sitetime"].hour < 15) else 0,
-        axis=1
-    )
-
-    # df["deviation_tag_with_time"] = df["deviation_tag_with_time"] * df["total_production"].max() * 0.1  # Adjust scale
-
-
-    # Step 8: Calculate Energy Lost
-    df["energy_lost"] = df.apply(
-        lambda row: (row["moving_average"] - row["total_production"]) * time_interval_hours
-        if row["deviation_tag_with_time"] == 1 and (row["moving_average"] - row["total_production"]) > 0 else 0,
-        axis=1
-    )
-
-    # Step 9: Filter data for January and May
-    jan_data = df[df["sitetime"].dt.month == 1]
-    may_data = df[df["sitetime"].dt.month == 5]
-
-    return jan_data, may_data
 
 
 def detect_dips(data, month_name):
@@ -243,7 +246,7 @@ def detect_dips(data, month_name):
 
     # Calculate total energy lost during dips
     total_energy_lost = sum(dip["energy_lost"] for dip in dips)
-    return total_energy_lost
+    return dips, total_energy_lost
 
 
 # Graph Generation Functions
